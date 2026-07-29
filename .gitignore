@@ -1,0 +1,6 @@
+__pycache__/
+*.pyc
+data/
+*.tar.gz
+*.pt
+*.wav

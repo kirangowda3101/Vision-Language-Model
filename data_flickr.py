@@ -86,15 +86,24 @@ class Flickr30kClipDataset(Dataset):
         image = example["image"].convert("RGB")
         image_tensor = image_transform(image)  # (3, 224, 224)
 
-        # "caption" is a list of ~5 alternative human-written captions for
-        # this image. We deterministically take the first one so that
-        # __getitem__(idx) always returns the same tokens for the same
-        # idx (useful for reproducibility/debugging). An alternative would
-        # be `caption_list[random.randrange(len(caption_list))]` to sample
-        # a different caption each time an image is drawn, which acts as
-        # a form of text-side data augmentation.
-        caption_list = example["caption"]
-        caption = caption_list[0]
+        # "original_alt_text" is a list of the 5 original human-written
+        # Flickr30k captions for this image. We deterministically take the
+        # first one so that __getitem__(idx) always returns the same
+        # tokens for the same idx (useful for reproducibility/debugging).
+        # A valid alternative would be to randomly sample among the 5
+        # (e.g. `caption_list[random.randrange(len(caption_list))]`) each
+        # time an image is drawn, which acts as text-side data
+        # augmentation by exposing the model to more phrasings of the same
+        # image.
+        #
+        # A small number of rows may have this field missing/empty (e.g.
+        # due to upstream scraping/annotation gaps), so we fall back to
+        # the single "alt_text" field in that case.
+        caption_list = example.get("original_alt_text")
+        if caption_list:
+            caption = caption_list[0]
+        else:
+            caption = example["alt_text"]
 
         token_ids = _tokenize_caption(caption, self.max_seq_len)
 
@@ -114,12 +123,14 @@ def get_flickr_dataloader(
       - image_batch: (B, 3, 224, 224)
       - token_ids_batch: (B, max_seq_len)
 
-    Flickr30k (as distributed on the HuggingFace Hub under "nlphuji/flickr30k")
-    only ships a single ~31,000-row split, confusingly named "test". Since
-    we still want a train/val distinction for our own training loop, we
-    manually carve that single split into two contiguous index ranges:
-    the first `train_frac` fraction of rows for "train", and the remaining
-    rows for "val".
+    Flickr30k (as distributed on the HuggingFace Hub under
+    "Mozilla/flickr30k-transformed-captions" -- stored as parquet, no
+    dataset loading script required, so it works with the current
+    `datasets` library) only ships a single ~31,000-row split,
+    confusingly named "test". Since we still want a train/val distinction
+    for our own training loop, we manually carve that single split into
+    two contiguous index ranges: the first `train_frac` fraction of rows
+    for "train", and the remaining rows for "val".
     """
     # `root_cache` is accepted for interface symmetry with get_cifar_dataloader
     # (which takes a `root` dir) and to let callers point at a different
@@ -127,7 +138,7 @@ def get_flickr_dataloader(
     # redirect the default HF cache, so this is only used if explicitly
     # overridden.
     full_dataset = load_dataset(
-        "nlphuji/flickr30k", split="test", cache_dir=root_cache
+        "Mozilla/flickr30k-transformed-captions", split="test", cache_dir=root_cache
     )
 
     num_rows = len(full_dataset)
@@ -158,3 +169,4 @@ if __name__ == "__main__":
     # Flickr30k captions (not just class-name templates like CIFAR-10).
     decoded_caption = _tokenizer.decode(token_ids_batch[0].tolist())
     print(decoded_caption)
+

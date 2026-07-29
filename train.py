@@ -75,18 +75,84 @@ def cleanup():
         dist.destroy_process_group()
 
 
-def save_checkpoint(model, save_path, is_distributed):
+def save_checkpoint(model, optimizer, epoch, global_step, save_path, is_distributed):
+    """
+    Saves FULL training state (not just model weights) so training can
+    resume exactly where it left off, e.g. across a chain of separate
+    SLURM job submissions:
+      - "model": the underlying model's weights.
+      - "optimizer": AdamW's internal per-parameter state (running
+        averages of the gradient and its square -- "momentum" and
+        "variance"). Without this, every resumed job would restart Adam's
+        momentum from zero, causing a burst of unstable, incorrectly
+        scaled updates right after every resume.
+      - "epoch" / "global_step": where training was, so the next run knows
+        where to continue counting from instead of starting over at 0.
+    """
     # When wrapped in DDP, `model` is a DistributedDataParallel object, not
     # the underlying CLIPModel itself -- the real model (and its
-    # state_dict) lives at `model.module`. Saving `model.state_dict()`
-    # directly would work too, but its keys would all be prefixed with
-    # "module." which makes the checkpoint awkward to load back into a
-    # plain (non-DDP) model later. Unwrapping to `model.module` here keeps
-    # the checkpoint format identical regardless of how many GPUs were used
-    # to produce it.
-    state_dict = model.module.state_dict() if is_distributed else model.state_dict()
-    torch.save(state_dict, save_path)
-    print(f"Saved checkpoint to {save_path}")
+    # state_dict) lives at `model.module`. Unwrapping here keeps the
+    # checkpoint format identical regardless of how many GPUs were used to
+    # produce it (no "module." prefix on every key).
+    model_state = model.module.state_dict() if is_distributed else model.state_dict()
+
+    checkpoint = {
+        "model": model_state,
+        "optimizer": optimizer.state_dict(),
+        "epoch": epoch,
+        "global_step": global_step,
+    }
+
+    # Atomic save: write to a temporary file first, then rename it into
+    # place. torch.save() writing directly to `save_path` is NOT atomic --
+    # if the process is killed mid-write (e.g. SLURM hits its walltime
+    # limit, which is exactly when we most need to checkpoint), `save_path`
+    # would be left as a truncated/corrupted file, and the next chained job
+    # would fail to resume from it. os.replace() (a rename) is atomic on
+    # POSIX filesystems: at every instant, `save_path` either shows the
+    # previous complete checkpoint or the new complete checkpoint, never a
+    # half-written one.
+    tmp_path = save_path + ".tmp"
+    torch.save(checkpoint, tmp_path)
+    os.replace(tmp_path, save_path)
+    print(f"Saved checkpoint to {save_path} (epoch {epoch}, step {global_step})")
+
+
+def load_checkpoint(model, optimizer, save_path, is_distributed, device, rank):
+    """
+    Restores training state from `save_path`, if it exists, for --resume.
+
+    All ranks call this (not just rank 0): on the shared filesystem SLURM
+    jobs normally use, every rank reads the identical checkpoint file, so
+    every rank's model weights AND optimizer state start out identical and
+    stay in sync. Relying only on DDP's internal parameter broadcast at
+    construction time would restore model weights but NOT optimizer
+    state, which DDP does not manage -- each rank must load that itself.
+
+    Note: we only record the epoch a checkpoint was saved at, not the
+    exact batch/step within that epoch, so resuming restarts from the
+    beginning of that epoch rather than the exact mid-epoch batch. This is
+    a deliberate simplicity trade-off -- fine at this scale, since redoing
+    part of one epoch is cheap compared to a full training run.
+    """
+    if not os.path.exists(save_path):
+        if is_master(rank):
+            print("No checkpoint found, starting fresh")
+        return 0, 0
+
+    checkpoint = torch.load(save_path, map_location=device)
+
+    target_model = model.module if is_distributed else model
+    target_model.load_state_dict(checkpoint["model"])
+    optimizer.load_state_dict(checkpoint["optimizer"])
+
+    start_epoch = checkpoint["epoch"]
+    global_step = checkpoint["global_step"]
+
+    if is_master(rank):
+        print(f"Resuming from {save_path} at epoch {start_epoch}, step {global_step}")
+
+    return start_epoch, global_step
 
 
 def build_dataloader(dataset_name, batch_size, is_distributed, rank, world_size):
@@ -202,9 +268,27 @@ def train(args):
     # non-distributed modes.
     optimizer = AdamW(model.parameters(), lr=args.lr, weight_decay=0.1)
 
-    step = 0
+    # Resume logic: only attempt to load a checkpoint if --resume was
+    # explicitly passed. This keeps a plain (non-resuming) invocation
+    # behaving exactly as before -- it ignores any leftover checkpoint
+    # file at save_path and always starts fresh from epoch 0, step 0.
+    if args.resume:
+        start_epoch, global_step = load_checkpoint(
+            model, optimizer, args.save_path, is_distributed, device, rank
+        )
+    else:
+        start_epoch, global_step = 0, 0
+
     stop_training = False
-    for epoch in range(args.epochs):
+    completed_all_epochs = False
+    epoch = start_epoch
+
+    # Loop bound is --max_epochs (not the old --epochs), since in a
+    # self-chaining SLURM setup this single invocation is only ONE link in
+    # a chain of jobs collectively training up to max_epochs -- the real
+    # stopping condition for the whole run is "epoch reached max_epochs",
+    # not "this particular job did N epochs".
+    for epoch in range(start_epoch, args.max_epochs):
         if sampler is not None:
             # Must be called at the start of every epoch. DistributedSampler
             # uses the epoch number as part of its shuffling seed; without
@@ -252,23 +336,36 @@ def train(args):
             # gradient update to this process's copy of the parameters.
             optimizer.step()
 
+            global_step += 1
+
             # Only the master process logs, to avoid N duplicate log lines
             # per step when running on N GPUs.
-            if is_master(rank) and step % 10 == 0:
-                print(f"epoch {epoch} | step {step} | loss {loss.item():.4f}")
+            if is_master(rank) and global_step % 10 == 0:
+                print(f"epoch {epoch} | step {global_step} | loss {loss.item():.4f}")
 
-            if is_master(rank) and step > 0 and step % args.save_every == 0:
-                save_checkpoint(model, args.save_path, is_distributed)
+            if is_master(rank) and global_step % args.save_every == 0:
+                save_checkpoint(
+                    model, optimizer, epoch, global_step, args.save_path, is_distributed
+                )
 
-            step += 1
-            if args.steps is not None and step >= args.steps:
+            if args.steps is not None and global_step >= args.steps:
                 # Allow capping total steps (e.g. for a quick smoke test)
-                # regardless of how many epochs/batches remain.
+                # regardless of how many epochs/batches remain. This is a
+                # deliberate early stop, not "training complete" -- it does
+                # NOT trigger the TRAINING_COMPLETE marker below.
                 stop_training = True
                 break
 
         if stop_training:
             break
+    else:
+        # This `else` belongs to the `for epoch in ...` loop above, and
+        # only runs if that loop finished normally -- i.e. it iterated
+        # through every epoch up to max_epochs without ever hitting the
+        # `break` from the --steps cap. That means training is genuinely,
+        # fully complete, as opposed to merely paused/checkpointed for the
+        # next link in the SLURM chain.
+        completed_all_epochs = True
 
     if is_distributed:
         # Make sure every GPU has finished its last training step before
@@ -278,18 +375,38 @@ def train(args):
         dist.barrier()
 
     if is_master(rank):
-        save_checkpoint(model, args.save_path, is_distributed)
+        # If we finished all epochs, record the checkpoint's epoch as
+        # max_epochs (rather than the last loop value, max_epochs - 1) so
+        # that if this checkpoint is ever resumed, range(start_epoch,
+        # max_epochs) is empty and immediately falls through to the
+        # "completed" state again, instead of quietly re-running the final
+        # epoch.
+        final_epoch = args.max_epochs if completed_all_epochs else epoch
+        save_checkpoint(
+            model, optimizer, final_epoch, global_step, args.save_path, is_distributed
+        )
+
+        if completed_all_epochs:
+            # Drop an empty marker file next to the checkpoint so the
+            # SLURM chaining script can check for its existence and stop
+            # resubmitting further jobs once training has genuinely
+            # finished.
+            save_dir = os.path.dirname(os.path.abspath(args.save_path))
+            marker_path = os.path.join(save_dir, "TRAINING_COMPLETE")
+            open(marker_path, "a").close()
+            print(f"Reached max_epochs ({args.max_epochs}); wrote {marker_path}")
 
 
 if __name__ == "__main__":
     parser = argparse.ArgumentParser(description="Train a CLIP-style model (single-GPU or DDP)")
     parser.add_argument("--dataset", choices=["cifar", "flickr"], default="flickr")
-    parser.add_argument("--epochs", type=int, default=1)
+    parser.add_argument("--max_epochs", type=int, default=30, help="Total epochs to train to, across all chained runs")
     parser.add_argument("--batch_size", type=int, default=32)
     parser.add_argument("--lr", type=float, default=1e-4)
-    parser.add_argument("--steps", type=int, default=None, help="Cap total training steps (for quick test runs)")
+    parser.add_argument("--steps", type=int, default=None, help="Cap total steps this run (for quick test runs)")
     parser.add_argument("--save_every", type=int, default=500)
     parser.add_argument("--save_path", type=str, default="clip_flickr.pt")
+    parser.add_argument("--resume", action="store_true", help="Resume from --save_path if it exists")
     args = parser.parse_args()
 
     train(args)

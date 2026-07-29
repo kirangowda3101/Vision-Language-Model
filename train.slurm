@@ -10,10 +10,8 @@
 #SBATCH --output=/scratch/ramanagarajayaram.k/logs/%j_train.out
 #SBATCH --error=/scratch/ramanagarajayaram.k/logs/%j_train.err
 
-set -euo pipefail
-
 # --- Environment -------------------------------------------------------
-source ~/miniconda3/etc/profile.d/conda.sh
+source /shared/EL9/explorer/anaconda3/2024.06/etc/profile.d/conda.sh
 conda activate vlm
 module load cuda/12.3.0
 

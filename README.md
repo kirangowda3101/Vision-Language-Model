@@ -4,6 +4,8 @@ A CLIP-style vision-language model built from scratch: a Vision Transformer imag
 
 No pretrained CLIP weights. No fine-tuning on top of an existing model. The patch embedding, the attention, the transformer blocks, the contrastive loss, the training loop — all of it was written from scratch.
 
+I'd previously built a [speech-language model](https://github.com/kirangowda3101/Speech-Language-Model) from scratch, which meant implementing transformers (RoPE, SwiGLU, attention, the training loop) for audio and text. This project is the vision counterpart to that one — the same from-scratch approach, applied to images and text instead of speech and text. Together they're meant to show the same underlying skill (building transformers from the ground up) across two different modalities.
+
 **Code:** [GitHub](https://github.com/kirangowda3101/Vision-Language-Model)
 
 ---
@@ -72,9 +74,27 @@ The batch-64 model didn't just score higher — it started behaving the way a co
 
 ## Results
 
-Zero-shot on CIFAR-10 test images (never seen during training, and CIFAR-10 itself was never used for training — only for evaluation): **23.6%** against a 10% random baseline across the 10 classes. This is a real, if modest, out-of-domain transfer result: the model was trained entirely on Flickr30k photos and captions, and is being asked to classify a completely different, much lower-resolution dataset it has never encountered.
+Text-to-image search (batch-64 model) is noticeably better on concepts that show up a lot in Flickr30k — dogs, people doing things outdoors, groups of people in a scene — and weaker on things that are rarer in that dataset, like bicycles. Two real queries side by side make this concrete: one it's good at, one it isn't.
 
-Text-to-image search is noticeably better on concepts that show up a lot in Flickr30k — dogs, people doing things outdoors, groups of people in a scene — and weaker on things that are rarer in that dataset, like bicycles. When the model is unsure, the similarity scores drop and flatten out rather than confidently returning a wrong answer. That's the correct behavior for this kind of model, not a bug: a low, flat score is the model telling you it doesn't have a good match.
+Query: `"a dog"` — top 5 results, all of them actually dogs:
+
+```
+0.656  A little tan dog with large ears running through the grass.
+0.638  Two brown dogs are creating large splashes as they run in a river.
+0.637  A white dog is resting its head on a tiled floor with its eyes open.
+0.564  A light brown dog runs down a path happily.
+0.537  A yellow lab standing next to a man.
+```
+
+Query: `"a man on a bicycle"` — top result:
+
+```
+0.491  A young gymnast jumps high in the air while performing on a balance beam.
+```
+
+No bicycle, no man — a wrong match. But look at the score: 0.491, well below the 0.656–0.537 range for the dog query. That gap is the model telling you it doesn't have a good match, not confidently getting it wrong. A low, flat score when the model is unsure is the correct behavior for a contrastive model, not a bug.
+
+Zero-shot on CIFAR-10 test images (never seen during training, and CIFAR-10 itself was never used for training — only for evaluation): **23.6%** against a 10% random baseline across the 10 classes. This is a real, if modest, out-of-domain transfer result: the model was trained entirely on Flickr30k photos and captions, and is being asked to classify a completely different, much lower-resolution dataset it has never encountered.
 
 ---
 
@@ -121,11 +141,14 @@ app_space.py           CPU-only variant for HuggingFace Spaces, loads the
 
 ## Running it
 
-Set up the environment:
+Set up the environment. This was developed on Python 3.11 with PyTorch. On the GPU cluster, a plain `pip install torch` silently pulled a CPU-only or mismatched-CUDA build that didn't actually use the GPU — installing the CUDA 12.1 build explicitly fixed it:
 
 ```
-pip install torch torchvision tiktoken datasets gradio
+pip install torch torchvision --index-url https://download.pytorch.org/whl/cu121
+pip install tiktoken datasets gradio
 ```
+
+The right `--index-url` depends on the machine's actual CUDA driver version, so check that before copying this verbatim on a different machine. The SLURM details below (partition names, paths, module versions) are specific to Northeastern's Explorer cluster and will need adjusting elsewhere.
 
 Train on the cluster (self-chains automatically until it reaches the configured number of epochs):
 

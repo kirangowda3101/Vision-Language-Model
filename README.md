@@ -7,6 +7,7 @@ No pretrained CLIP weights. No fine-tuning on top of an existing model. The patc
 I'd previously built a [speech-language model](https://github.com/kirangowda3101/Speech-Language-Model) from scratch, which meant implementing transformers (RoPE, SwiGLU, attention, the training loop) for audio and text. This project is the vision counterpart to that one — the same from-scratch approach, applied to images and text instead of speech and text. Together they're meant to show the same underlying skill (building transformers from the ground up) across two different modalities.
 
 **Code:** [GitHub](https://github.com/kirangowda3101/Vision-Language-Model)
+**Model weights:** [HuggingFace](https://huggingface.co/kirangowda3101/vision-language-model) (257MB, inference-ready)
 
 ---
 

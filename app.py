@@ -1,28 +1,25 @@
-import os
-
-# Same reasoning as data_flickr.py / search_demo.py: redirect HuggingFace's
-# cache to scratch space before importing `datasets`, so it doesn't fill up
-# the home directory quota on the cluster. This is a no-op (just points the
-# cache somewhere writable) anywhere else, e.g. running this app locally.
-_HF_CACHE_DIR = "/scratch/ramanagarajayaram.k/hf_cache"
-os.makedirs(_HF_CACHE_DIR, exist_ok=True)
-os.environ["HF_HOME"] = _HF_CACHE_DIR
-os.environ["HF_DATASETS_CACHE"] = _HF_CACHE_DIR
-
 import gradio as gr
 import tiktoken
 import torch
 import torch.nn.functional as F
 from torchvision import transforms
-from datasets import load_dataset
 
 from model_vit import VisionTransformer
 from text_encoder import TextEncoder
 from clip_model import CLIPModel
 
 MAX_SEQ_LEN = 32
-NUM_INDEX_IMAGES = 300
 TOP_K_SEARCH = 5
+
+# HuggingFace Spaces' free CPU tier has no GPU, so we pin everything to
+# CPU explicitly rather than checking torch.cuda.is_available() -- this
+# app is meant to run identically whether or not a GPU happens to be
+# present, and being explicit avoids any surprise if it's ever run
+# somewhere a GPU IS visible but not intended to be used.
+device = torch.device("cpu")
+
+CHECKPOINT_PATH = "best.pt"
+INDEX_PATH = "index.pt"
 
 # Fixed candidate labels for the zero-shot classification tab. Unlike
 # CIFAR-10 (10 fixed dataset classes), this is just a reasonable general
@@ -45,9 +42,9 @@ ZERO_SHOT_LABELS = [
 _tokenizer = tiktoken.get_encoding("gpt2")
 
 # Same preprocessing pipeline used throughout the project (data_cifar.py,
-# data_flickr.py, search_demo.py): resize to the ViT's expected input size,
-# convert to a float tensor in [0, 1], then normalize to roughly [-1, 1]
-# per channel.
+# data_flickr.py, precompute_index.py): resize to the ViT's expected input
+# size, convert to a float tensor in [0, 1], then normalize to roughly
+# [-1, 1] per channel.
 image_transform = transforms.Compose(
     [
         transforms.Resize((224, 224)),
@@ -65,23 +62,14 @@ def tokenize_text(text, max_seq_len=MAX_SEQ_LEN):
     return torch.tensor([token_ids], dtype=torch.long)  # (1, max_seq_len)
 
 
-def get_caption(example):
-    """Best-effort real caption for a Flickr30k row, for display alongside search results."""
-    caption_list = example.get("original_alt_text")
-    if caption_list:
-        return caption_list[0]
-    return example.get("alt_text", "<no caption available>")
-
-
-def build_model(checkpoint_path="best.pt"):
+def build_model(checkpoint_path=CHECKPOINT_PATH):
     """
     Reconstructs the exact same CLIPModel architecture used in train.py,
     loads the trained weights from `checkpoint_path`, and puts the model
-    in eval mode on the fastest available device. Identical in spirit to
-    zero_shot.py's / search_demo.py's build_model().
+    in eval mode on CPU. On a Space, `checkpoint_path` is just "best.pt"
+    sitting in the Space's root directory (uploaded alongside this file),
+    not a cluster path.
     """
-    device = torch.device("cuda" if torch.cuda.is_available() else "cpu")
-
     image_encoder = VisionTransformer(
         image_size=224,
         patch_size=16,
@@ -110,60 +98,15 @@ def build_model(checkpoint_path="best.pt"):
     model = model.to(device)
     model.eval()
 
-    return model, device
+    return model
 
 
-def build_image_index(model, device, num_images=NUM_INDEX_IMAGES):
+def build_label_index(model, labels=ZERO_SHOT_LABELS):
     """
-    Builds the text-to-image search index ONCE at startup: encodes
-    `num_images` Flickr30k images into the shared CLIP embedding space,
-    L2-normalizes each vector, and stacks them into a single (N, 256)
-    matrix. Every subsequent search in the Gradio app just encodes ONE
-    short text query and compares it against this already-computed
-    matrix, instead of re-running the (expensive) image encoder on every
-    search.
-    """
-    print(f"Building search index from {num_images} Flickr30k images...")
-    dataset = load_dataset(
-        "Mozilla/flickr30k-transformed-captions", split="test", cache_dir=_HF_CACHE_DIR
-    )
-    num_images = min(num_images, len(dataset))
-    dataset = dataset.select(range(num_images))
-
-    # Keep the raw PIL images and captions in lists parallel to the
-    # embedding matrix's rows, so index i in `image_features` always
-    # corresponds to `images[i]` / `captions[i]`.
-    images = []
-    captions = []
-    image_tensors = []
-
-    for i in range(num_images):
-        example = dataset[i]
-        image = example["image"].convert("RGB")
-        images.append(image)
-        captions.append(get_caption(example))
-        image_tensors.append(image_transform(image))
-
-    image_batch = torch.stack(image_tensors, dim=0).to(device)
-
-    with torch.no_grad():
-        image_features = model.image_encoder(image_batch)  # (N, 256)
-        # L2-normalize so that a dot product against a normalized text
-        # vector gives cosine similarity -- pure directional alignment
-        # between the image and text embeddings, unaffected by either
-        # vector's raw magnitude.
-        image_features = F.normalize(image_features, dim=-1)
-
-    print("Search index built.")
-    return image_features, images, captions
-
-
-def build_label_index(model, device, labels=ZERO_SHOT_LABELS):
-    """
-    Encodes the fixed zero-shot candidate labels ONCE at startup, for the
-    same reason as build_image_index: the label set never changes between
-    classification requests, so there's no reason to re-run the text
-    encoder on it every time a user uploads a new image.
+    Encodes the fixed zero-shot candidate labels ONCE at startup: the
+    label set never changes between classification requests, so there's
+    no reason to re-run the text encoder on it every time a user uploads
+    a new image.
     """
     token_ids = torch.cat([tokenize_text(label) for label in labels], dim=0).to(device)  # (num_labels, MAX_SEQ_LEN)
 
@@ -174,22 +117,31 @@ def build_label_index(model, device, labels=ZERO_SHOT_LABELS):
     return label_features
 
 
-# --- One-time startup: build the model and both indexes ------------------
-model, device = build_model()
+# --- One-time startup ------------------------------------------------------
+# Unlike app.py's original cluster version, we do NOT load the Flickr30k
+# dataset or run the (expensive) image encoder over hundreds of images
+# here. Instead, precompute_index.py already did that once (on a GPU) and
+# saved the results to index.pt -- we just load that file, which is fast
+# and CPU-friendly, exactly what a free HuggingFace Space needs.
+model = build_model()
 print(f"Using device: {device}")
 
-image_features_index, indexed_images, indexed_captions = build_image_index(model, device)
-label_features_index = build_label_index(model, device)
+index = torch.load(INDEX_PATH, map_location="cpu")
+image_features_index = index["image_features"]  # (N, 256), already L2-normalized
+indexed_images = index["images"]  # list[PIL.Image]
+indexed_captions = index["captions"]  # list[str]
+
+label_features_index = build_label_index(model)
 
 
 def search_images(query_text):
     """
     Text-to-image search: embeds `query_text` with the text encoder,
     L2-normalizes it, and compares it against every pre-computed,
-    L2-normalized image embedding via a single dot product -- since both
-    vectors are unit-length, this dot product IS their cosine similarity.
-    Returns the top-K images as (image, caption_with_score) pairs for a
-    gr.Gallery.
+    L2-normalized image embedding (loaded from index.pt) via a single dot
+    product -- since both vectors are unit-length, this dot product IS
+    their cosine similarity. Returns the top-K images as
+    (image, caption_with_score) pairs for a gr.Gallery.
     """
     if not query_text or not query_text.strip():
         return []
@@ -216,10 +168,13 @@ def search_images(query_text):
 
 def classify_image(uploaded_image):
     """
-    Zero-shot image classification: embeds the uploaded image, compares it
-    against the fixed set of pre-encoded ZERO_SHOT_LABELS via cosine
-    similarity, and converts those similarity scores into a probability
-    distribution via softmax so gr.Label can render confidence bars.
+    Zero-shot image classification: embeds the uploaded image (the one
+    piece of inference in this app that still runs live, since a user can
+    upload anything -- but a single image is cheap enough for CPU),
+    compares it against the fixed set of pre-encoded ZERO_SHOT_LABELS via
+    cosine similarity, and converts those similarity scores into a
+    probability distribution via softmax so gr.Label can render
+    confidence bars.
     """
     if uploaded_image is None:
         return {}
@@ -248,10 +203,17 @@ def classify_image(uploaded_image):
 
 # --- Gradio UI -------------------------------------------------------------
 with gr.Blocks(title="CLIP Demo") as demo:
-    gr.Markdown("# CLIP-from-scratch demo\nTrained on Flickr30k image-caption pairs.")
+    gr.Markdown(
+        "# CLIP, built from scratch\n"
+        "A Vision Transformer image encoder and a GPT-2-tokenized text encoder, "
+        "trained together from scratch with a contrastive loss on Flickr30k "
+        "image-caption pairs -- no pretrained CLIP weights used anywhere. "
+        "Try searching the indexed images by text, or upload your own image "
+        "for zero-shot classification."
+    )
 
     with gr.Tab("Text-to-image search"):
-        gr.Markdown("Enter a text query and find the closest matching images from a 300-image Flickr30k index.")
+        gr.Markdown("Enter a text query and find the closest matching images from a precomputed Flickr30k index.")
         query_input = gr.Textbox(label="Search query", placeholder="e.g. a dog running on the beach")
         search_button = gr.Button("Search")
         results_gallery = gr.Gallery(label="Top matches", columns=5)
@@ -269,4 +231,7 @@ with gr.Blocks(title="CLIP Demo") as demo:
 
 
 if __name__ == "__main__":
-    demo.launch(server_name="0.0.0.0", share=True)
+    # No share=True needed on a Space -- HuggingFace already serves the
+    # app at a public URL; share=True (ngrok tunneling) is only useful for
+    # exposing a locally/cluster-run app.
+    demo.launch()

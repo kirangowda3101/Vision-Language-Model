@@ -59,7 +59,7 @@ echo "Submitted next job: $NEXT_JOB_ID"
 # Single GPU, plain python (no torchrun) -- validated to work correctly in
 # single-GPU mode; --resume picks up model/optimizer/epoch/global_step
 # from the last checkpoint written by a previous link in the chain, if any.
-srun python train.py \
+python train.py \
     --dataset flickr \
     --max_epochs 30 \
     --batch_size 64 \

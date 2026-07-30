@@ -27,7 +27,7 @@ export HF_DATASETS_CACHE=/scratch/ramanagarajayaram.k/hf_cache
 
 # --- Paths ---------------------------------------------------------------
 REPO_DIR=/home/ramanagarajayaram.k/Vision-Language-Model
-CHECKPOINT_DIR=/home/ramanagarajayaram.k/checkpoints/clip_flickr
+CHECKPOINT_DIR=/home/ramanagarajayaram.k/checkpoints/clip_flickr_v2
 
 mkdir -p "$CHECKPOINT_DIR"
 mkdir -p /scratch/ramanagarajayaram.k/logs
@@ -62,7 +62,7 @@ echo "Submitted next job: $NEXT_JOB_ID"
 srun python train.py \
     --dataset flickr \
     --max_epochs 30 \
-    --batch_size 16 \
+    --batch_size 64 \
     --lr 1e-4 \
     --resume \
     --save_path "$CHECKPOINT_DIR/best.pt" \

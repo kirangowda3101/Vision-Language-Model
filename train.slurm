@@ -20,6 +20,11 @@ module load cuda/12.3.0
 # growing them.
 export PYTORCH_CUDA_ALLOC_CONF=expandable_segments:True
 
+# Forces Python's stdout/stderr to be unbuffered, so print() output (e.g.
+# training loss logs) shows up in the SLURM .out file immediately instead
+# of sitting in a buffer until it fills up or the process exits.
+export PYTHONUNBUFFERED=1
+
 # Redirect HuggingFace's cache to scratch space (must match data_flickr.py)
 # so dataset/image downloads don't blow through the home directory quota.
 export HF_HOME=/scratch/ramanagarajayaram.k/hf_cache

@@ -1,0 +1,7 @@
+torch
+torchvision
+tiktoken
+datasets
+gradio
+numpy
+tqdm

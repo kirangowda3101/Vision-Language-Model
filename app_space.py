@@ -7,6 +7,7 @@ from torchvision import transforms
 from model_vit import VisionTransformer
 from text_encoder import TextEncoder
 from clip_model import CLIPModel
+from drift_monitor import load_drift_monitor
 
 MAX_SEQ_LEN = 32
 TOP_K_SEARCH = 5
@@ -133,6 +134,12 @@ indexed_captions = index["captions"]  # list[str]
 
 label_features_index = build_label_index(model)
 
+# Drift monitoring on the classification path (see drift_monitor.py). It
+# scores the probabilities with the model's learned logit_scale, the way the
+# model was trained, independently of the unscaled softmax shown in the UI.
+# Returns None, and the app runs unmonitored, if drift_reference.npz is missing.
+drift_monitor = load_drift_monitor(label_features_index.cpu().numpy(), model.logit_scale.exp().item())
+
 
 def search_images(query_text):
     """
@@ -194,6 +201,9 @@ def classify_image(uploaded_image):
         # candidate labels that sums to 1, which is what gr.Label expects
         # in order to draw its confidence bars.
         probabilities = similarity.softmax(dim=-1)
+
+    if drift_monitor is not None:
+        drift_monitor.observe(uploaded_image, image_feature[0].cpu().numpy())
 
     return {
         label: probability.item()

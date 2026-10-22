@@ -5,3 +5,6 @@ datasets
 gradio
 numpy
 tqdm
+matplotlib
+prometheus_client
+pytest

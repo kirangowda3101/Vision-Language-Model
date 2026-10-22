@@ -1,0 +1,9 @@
+# Minimal Prometheus scrape config for the CLIP demo's drift metrics.
+# app.py / app_space.py start the metrics endpoint on METRICS_PORT (default 8000).
+global:
+  scrape_interval: 15s
+
+scrape_configs:
+  - job_name: clip-demo
+    static_configs:
+      - targets: ["localhost:8000"]

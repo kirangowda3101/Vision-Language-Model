@@ -1,0 +1,34 @@
+Using device: mps, logit_scale = 23.1615
+Eval subset (indices 0-499) zero-shot accuracy: 12.4%
+Encoding clean pools...
+RBF bandwidth (median heuristic on reference): 1.1755
+Scoring calibration and held-out clean batches...
+  input_stats            threshold=2.4211  FAR cal=0.048 heldout=0.062
+  embedding_cosine       threshold=0.0192513  FAR cal=0.048 heldout=0.028
+  embedding_mmd          threshold=0.00269042  FAR cal=0.048 heldout=0.036
+  confidence_top_prob    threshold=2.23602  FAR cal=0.048 heldout=0.066
+  confidence_entropy     threshold=2.21295  FAR cal=0.048 heldout=0.078
+  mmd p<0.05 rule        FAR cal=0.072 heldout=0.056
+  brightness_reduction   sev 1: acc=15.4%  input=0.78  cosine=0.35  mmd=0.23  top_prob=0.02  entropy=0.01  (18s)
+  brightness_reduction   sev 2: acc=16.0%  input=1.00  cosine=1.00  mmd=0.99  top_prob=0.00  entropy=0.00  (17s)
+  brightness_reduction   sev 3: acc=16.5%  input=1.00  cosine=1.00  mmd=1.00  top_prob=0.00  entropy=0.00  (18s)
+  brightness_reduction   sev 4: acc=16.3%  input=1.00  cosine=1.00  mmd=1.00  top_prob=0.03  entropy=0.01  (18s)
+  brightness_reduction   sev 5: acc=16.9%  input=1.00  cosine=1.00  mmd=1.00  top_prob=0.34  entropy=0.24  (18s)
+  gaussian_blur          sev 1: acc=15.0%  input=1.00  cosine=0.00  mmd=0.01  top_prob=0.03  entropy=0.02  (18s)
+  gaussian_blur          sev 2: acc=14.6%  input=1.00  cosine=0.27  mmd=0.79  top_prob=0.04  entropy=0.03  (18s)
+  gaussian_blur          sev 3: acc=14.7%  input=1.00  cosine=0.65  mmd=0.99  top_prob=0.03  entropy=0.03  (18s)
+  gaussian_blur          sev 4: acc=14.5%  input=1.00  cosine=0.95  mmd=1.00  top_prob=0.03  entropy=0.03  (18s)
+  gaussian_blur          sev 5: acc=14.2%  input=1.00  cosine=1.00  mmd=1.00  top_prob=0.04  entropy=0.03  (18s)
+  gaussian_noise         sev 1: acc=15.7%  input=1.00  cosine=1.00  mmd=1.00  top_prob=0.08  entropy=0.12  (18s)
+  gaussian_noise         sev 2: acc=15.2%  input=1.00  cosine=1.00  mmd=1.00  top_prob=0.09  entropy=0.11  (18s)
+  gaussian_noise         sev 3: acc=14.5%  input=1.00  cosine=1.00  mmd=1.00  top_prob=0.03  entropy=0.02  (18s)
+  gaussian_noise         sev 4: acc=14.8%  input=1.00  cosine=1.00  mmd=1.00  top_prob=0.03  entropy=0.04  (18s)
+  gaussian_noise         sev 5: acc=15.2%  input=1.00  cosine=1.00  mmd=1.00  top_prob=0.07  entropy=0.09  (18s)
+  jpeg_compression       sev 1: acc=14.0%  input=0.07  cosine=0.36  mmd=0.67  top_prob=0.03  entropy=0.03  (18s)
+  jpeg_compression       sev 2: acc=13.6%  input=0.26  cosine=0.63  mmd=0.94  top_prob=0.04  entropy=0.02  (18s)
+  jpeg_compression       sev 3: acc=14.0%  input=0.41  cosine=0.74  mmd=0.97  top_prob=0.01  entropy=0.01  (18s)
+  jpeg_compression       sev 4: acc=14.0%  input=0.63  cosine=0.91  mmd=1.00  top_prob=0.01  entropy=0.01  (18s)
+  jpeg_compression       sev 5: acc=13.9%  input=0.85  cosine=0.98  mmd=1.00  top_prob=0.01  entropy=0.01  (18s)
+
+Wrote results/drift/drift_results.json, plots in results/drift/, reference artifact drift_reference.npz
+Total runtime: 471s

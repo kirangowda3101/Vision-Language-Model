@@ -1,0 +1,107 @@
+# Example Grafana alert rules (file provisioning format), e.g. mounted at
+# /etc/grafana/provisioning/alerting/clip_drift.yaml.
+#
+# Assumes a Prometheus data source with uid "prometheus"; change
+# datasourceUid to match yours.
+#
+# Rule 1 fires per signal when the last scored window's drift score is
+# above its calibrated threshold (score / threshold > 1). The thresholds were
+# calibrated for a 5% false-alarm rate PER WINDOW, so a single window over
+# threshold is expected about once every 20 clean windows. Requiring the
+# condition to hold for 10 minutes (`for: 10m`) means a single noisy window
+# isn't enough to page anyone, assuming windows complete faster than that.
+#
+# Rule 2 catches the monitor going silent: drift gauges keep their last
+# value when traffic stops, so stale scores could otherwise look healthy.
+apiVersion: 1
+groups:
+  - orgId: 1
+    name: clip-drift
+    folder: ML Monitoring
+    interval: 1m
+    rules:
+      - uid: clip-drift-score-over-threshold
+        title: CLIP input drift detected
+        condition: C
+        data:
+          - refId: A
+            relativeTimeRange:
+              from: 600
+              to: 0
+            datasourceUid: prometheus
+            model:
+              refId: A
+              expr: clip_drift_score / clip_drift_threshold
+              instant: true
+          - refId: B
+            datasourceUid: __expr__
+            model:
+              refId: B
+              type: reduce
+              expression: A
+              reducer: last
+          - refId: C
+            datasourceUid: __expr__
+            model:
+              refId: C
+              type: threshold
+              expression: B
+              conditions:
+                - evaluator:
+                    type: gt
+                    params: [1]
+        for: 10m
+        noDataState: OK
+        execErrState: Error
+        labels:
+          severity: warning
+          team: ml
+        annotations:
+          summary: "Drift signal {{ $labels.signal }} above its calibrated threshold"
+          description: >-
+            {{ $labels.signal }} score / threshold = {{ humanize $values.B.Value }} for the
+            last scored window(s). Thresholds target a 5% false-alarm rate per window on clean
+            CIFAR-10 batches. See results/drift/drift_results.json for which corruptions each
+            signal detects reliably before acting on it.
+
+      - uid: clip-drift-monitor-stale
+        title: CLIP drift monitor has not scored a window recently
+        condition: C
+        data:
+          - refId: A
+            relativeTimeRange:
+              from: 600
+              to: 0
+            datasourceUid: prometheus
+            model:
+              refId: A
+              expr: time() - clip_drift_last_window_timestamp_seconds
+              instant: true
+          - refId: B
+            datasourceUid: __expr__
+            model:
+              refId: B
+              type: reduce
+              expression: A
+              reducer: last
+          - refId: C
+            datasourceUid: __expr__
+            model:
+              refId: C
+              type: threshold
+              expression: B
+              conditions:
+                - evaluator:
+                    type: gt
+                    params: [3600]
+        for: 5m
+        noDataState: Alerting
+        execErrState: Error
+        labels:
+          severity: info
+          team: ml
+        annotations:
+          summary: "No drift window scored in the last hour"
+          description: >-
+            Drift scores are only updated every DRIFT_WINDOW_SIZE classified images; gauges
+            hold their last value in between. Low traffic or a broken monitor both show up here.

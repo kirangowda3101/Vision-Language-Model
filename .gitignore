@@ -4,3 +4,5 @@ data/
 *.tar.gz
 *.pt
 *.wav
+weights/
+drift_reference.npz

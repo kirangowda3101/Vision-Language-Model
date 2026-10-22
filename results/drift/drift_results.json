@@ -1,0 +1,1103 @@
+{
+  "config": {
+    "checkpoint": "weights/best.pt",
+    "seed": 0,
+    "device": "mps",
+    "torch_version": "2.13.0",
+    "numpy_version": "2.4.6",
+    "python_version": "3.11.15",
+    "logit_scale": 23.16152000427246,
+    "prompts": [
+      "a photo of a airplane",
+      "a photo of a automobile",
+      "a photo of a bird",
+      "a photo of a cat",
+      "a photo of a deer",
+      "a photo of a dog",
+      "a photo of a frog",
+      "a photo of a horse",
+      "a photo of a ship",
+      "a photo of a truck"
+    ],
+    "excluded_eval_subset": "CIFAR-10 test indices 0-499",
+    "pool_sizes": {
+      "reference": 2000,
+      "calibration": 2500,
+      "heldout": 2500,
+      "shift": 2500
+    },
+    "batch_size": 100,
+    "n_calibration_batches": 500,
+    "n_heldout_batches": 500,
+    "n_shift_batches_per_condition": 100,
+    "batch_sampling": "each batch = batch_size distinct images drawn uniformly from its pool; batches may overlap",
+    "n_permutations": 500,
+    "rbf_bandwidth": 1.1755435179008804,
+    "target_false_alarm_rate": 0.05,
+    "corruptions": {
+      "brightness_reduction": [
+        0.05,
+        0.1,
+        0.15,
+        0.2,
+        0.3
+      ],
+      "gaussian_blur": [
+        0.4,
+        0.6,
+        0.7,
+        0.8,
+        1.0
+      ],
+      "gaussian_noise": [
+        0.04,
+        0.06,
+        0.08,
+        0.09,
+        0.1
+      ],
+      "jpeg_compression": [
+        80,
+        65,
+        58,
+        50,
+        40
+      ]
+    }
+  },
+  "sanity_check": {
+    "eval_subset_accuracy": 0.124,
+    "eval_subset_size": 500
+  },
+  "reference": {
+    "n_images": 2000,
+    "accuracy": 0.136,
+    "mean_embedding_norm": 0.5546956025787545,
+    "mean_brightness": 0.4801607348498774,
+    "mean_contrast": 0.19606298712689157,
+    "mean_sharpness": 0.03629106576610336,
+    "mean_top_prob": 0.6483195019648451,
+    "mean_entropy": 0.9693355393041643
+  },
+  "pool_accuracy": {
+    "reference": 0.136,
+    "calibration": 0.1392,
+    "heldout": 0.1304,
+    "shift": 0.15
+  },
+  "thresholds": {
+    "input_stats": 2.421099032922718,
+    "embedding_cosine": 0.019251273374815248,
+    "embedding_mmd": 0.0026904225119650516,
+    "confidence_top_prob": 2.2360213607889428,
+    "confidence_entropy": 2.212952508122528
+  },
+  "false_alarm": {
+    "input_stats": {
+      "calibration_rate": 0.048,
+      "heldout_rate": 0.062,
+      "heldout_ci95": [
+        0.04401893261361028,
+        0.08666023321946106
+      ],
+      "heldout_alarms": 31,
+      "heldout_batches": 500
+    },
+    "embedding_cosine": {
+      "calibration_rate": 0.048,
+      "heldout_rate": 0.028,
+      "heldout_ci95": [
+        0.01675081930862122,
+        0.04644682058455155
+      ],
+      "heldout_alarms": 14,
+      "heldout_batches": 500
+    },
+    "embedding_mmd": {
+      "calibration_rate": 0.048,
+      "heldout_rate": 0.036,
+      "heldout_ci95": [
+        0.022890872735181415,
+        0.05618477326149691
+      ],
+      "heldout_alarms": 18,
+      "heldout_batches": 500
+    },
+    "confidence_top_prob": {
+      "calibration_rate": 0.048,
+      "heldout_rate": 0.066,
+      "heldout_ci95": [
+        0.04737823802541255,
+        0.09123993085941157
+      ],
+      "heldout_alarms": 33,
+      "heldout_batches": 500
+    },
+    "confidence_entropy": {
+      "calibration_rate": 0.048,
+      "heldout_rate": 0.078,
+      "heldout_ci95": [
+        0.057581071819524224,
+        0.10485410622055823
+      ],
+      "heldout_alarms": 39,
+      "heldout_batches": 500
+    }
+  },
+  "mmd_pvalue_rule": {
+    "alpha": 0.05,
+    "calibration_rate": 0.072,
+    "heldout_rate": 0.056,
+    "heldout_ci95": [
+      0.03902536261505807,
+      0.07974529864038413
+    ]
+  },
+  "conditions": [
+    {
+      "corruption": "none",
+      "severity": 0,
+      "parameter": null,
+      "accuracy": 0.15,
+      "batch_accuracy_mean": 0.14859999999999998,
+      "batch_accuracy_std": 0.03512890547682919,
+      "mean_brightness": 0.4853622489889705,
+      "mean_contrast": 0.19636248593975975,
+      "mean_sharpness": 0.03696757469473672,
+      "mean_top_prob": 0.65670303863267,
+      "mean_entropy": 0.9537322217641006,
+      "signals": {
+        "input_stats": {
+          "mean_score": 1.386972468008694,
+          "std_score": 0.5968770927806653,
+          "detection_rate": 0.07
+        },
+        "embedding_cosine": {
+          "mean_score": 0.010660710275071096,
+          "std_score": 0.003097612346077987,
+          "detection_rate": 0.0
+        },
+        "embedding_mmd": {
+          "mean_score": -0.0001398768098894987,
+          "std_score": 0.0008774074831142844,
+          "detection_rate": 0.01
+        },
+        "confidence_top_prob": {
+          "mean_score": 0.8164607514959435,
+          "std_score": 0.627213486936421,
+          "detection_rate": 0.02
+        },
+        "confidence_entropy": {
+          "mean_score": 0.8257366170818908,
+          "std_score": 0.546778869067941,
+          "detection_rate": 0.02
+        }
+      },
+      "mmd_pvalue_rule_detection_rate": 0.01,
+      "accuracy_drop": 0.0
+    },
+    {
+      "corruption": "brightness_reduction",
+      "severity": 1,
+      "parameter": 0.05,
+      "accuracy": 0.1544,
+      "batch_accuracy_mean": 0.1492,
+      "batch_accuracy_std": 0.03442905749508691,
+      "mean_brightness": 0.44108354642003667,
+      "mean_contrast": 0.19407308130333048,
+      "mean_sharpness": 0.03626555232352832,
+      "mean_top_prob": 0.6542393035057562,
+      "mean_entropy": 0.9554925125518076,
+      "signals": {
+        "input_stats": {
+          "mean_score": 3.2316789911066106,
+          "std_score": 0.9364834860313513,
+          "detection_rate": 0.78
+        },
+        "embedding_cosine": {
+          "mean_score": 0.017408909755104177,
+          "std_score": 0.004716420366058352,
+          "detection_rate": 0.35
+        },
+        "embedding_mmd": {
+          "mean_score": 0.0017307124594504852,
+          "std_score": 0.001370265130072122,
+          "detection_rate": 0.23
+        },
+        "confidence_top_prob": {
+          "mean_score": 0.7245987869114698,
+          "std_score": 0.5209542397317718,
+          "detection_rate": 0.02
+        },
+        "confidence_entropy": {
+          "mean_score": 0.7584293511539494,
+          "std_score": 0.4645272980709316,
+          "detection_rate": 0.01
+        }
+      },
+      "mmd_pvalue_rule_detection_rate": 0.32,
+      "accuracy_drop": -0.004400000000000015
+    },
+    {
+      "corruption": "brightness_reduction",
+      "severity": 2,
+      "parameter": 0.1,
+      "accuracy": 0.1596,
+      "batch_accuracy_mean": 0.1579,
+      "batch_accuracy_std": 0.03380221886208064,
+      "mean_brightness": 0.3991352597794117,
+      "mean_contrast": 0.1912857417348782,
+      "mean_sharpness": 0.03564941526763613,
+      "mean_top_prob": 0.6500627682207077,
+      "mean_entropy": 0.9605959713602755,
+      "signals": {
+        "input_stats": {
+          "mean_score": 6.713183357337622,
+          "std_score": 0.9413082511281157,
+          "detection_rate": 1.0
+        },
+        "embedding_cosine": {
+          "mean_score": 0.040573244216874825,
+          "std_score": 0.008219488832997226,
+          "detection_rate": 1.0
+        },
+        "embedding_mmd": {
+          "mean_score": 0.008421006585694083,
+          "std_score": 0.002419354466646693,
+          "detection_rate": 0.99
+        },
+        "confidence_top_prob": {
+          "mean_score": 0.6617158102821579,
+          "std_score": 0.47653192137529143,
+          "detection_rate": 0.0
+        },
+        "confidence_entropy": {
+          "mean_score": 0.6842405068941108,
+          "std_score": 0.41283238440795283,
+          "detection_rate": 0.0
+        }
+      },
+      "mmd_pvalue_rule_detection_rate": 1.0,
+      "accuracy_drop": -0.009599999999999997
+    },
+    {
+      "corruption": "brightness_reduction",
+      "severity": 3,
+      "parameter": 0.15,
+      "accuracy": 0.1652,
+      "batch_accuracy_mean": 0.1666,
+      "batch_accuracy_std": 0.03544629740889731,
+      "mean_brightness": 0.35751702977787986,
+      "mean_contrast": 0.18697139597787726,
+      "mean_sharpness": 0.03456177530836931,
+      "mean_top_prob": 0.6436369024046622,
+      "mean_entropy": 0.9688884847380603,
+      "signals": {
+        "input_stats": {
+          "mean_score": 10.178691584076521,
+          "std_score": 0.915438490339135,
+          "detection_rate": 1.0
+        },
+        "embedding_cosine": {
+          "mean_score": 0.07942979869914821,
+          "std_score": 0.011771364836812176,
+          "detection_rate": 1.0
+        },
+        "embedding_mmd": {
+          "mean_score": 0.02031052091924655,
+          "std_score": 0.003616891928413163,
+          "detection_rate": 1.0
+        },
+        "confidence_top_prob": {
+          "mean_score": 0.6488405999725607,
+          "std_score": 0.49853560930116125,
+          "detection_rate": 0.0
+        },
+        "confidence_entropy": {
+          "mean_score": 0.6448032261420554,
+          "std_score": 0.43955858846547213,
+          "detection_rate": 0.0
+        }
+      },
+      "mmd_pvalue_rule_detection_rate": 1.0,
+      "accuracy_drop": -0.015200000000000019
+    },
+    {
+      "corruption": "brightness_reduction",
+      "severity": 4,
+      "parameter": 0.2,
+      "accuracy": 0.1628,
+      "batch_accuracy_mean": 0.1625,
+      "batch_accuracy_std": 0.0340697813318489,
+      "mean_brightness": 0.3157934205989583,
+      "mean_contrast": 0.181333827213474,
+      "mean_sharpness": 0.03327875813813478,
+      "mean_top_prob": 0.636599991766932,
+      "mean_entropy": 0.9827881634805538,
+      "signals": {
+        "input_stats": {
+          "mean_score": 13.653279158944388,
+          "std_score": 0.8850501409036501,
+          "detection_rate": 1.0
+        },
+        "embedding_cosine": {
+          "mean_score": 0.13399427603643235,
+          "std_score": 0.014915741409660812,
+          "detection_rate": 1.0
+        },
+        "embedding_mmd": {
+          "mean_score": 0.03864897990479418,
+          "std_score": 0.00496480012515493,
+          "detection_rate": 1.0
+        },
+        "confidence_top_prob": {
+          "mean_score": 0.7552877075639749,
+          "std_score": 0.6380209746808148,
+          "detection_rate": 0.03
+        },
+        "confidence_entropy": {
+          "mean_score": 0.6571924274940487,
+          "std_score": 0.5490699899519076,
+          "detection_rate": 0.01
+        }
+      },
+      "mmd_pvalue_rule_detection_rate": 1.0,
+      "accuracy_drop": -0.012800000000000006
+    },
+    {
+      "corruption": "brightness_reduction",
+      "severity": 5,
+      "parameter": 0.3,
+      "accuracy": 0.1688,
+      "batch_accuracy_mean": 0.16779999999999998,
+      "batch_accuracy_std": 0.033573203600490674,
+      "mean_brightness": 0.23946076550857842,
+      "mean_contrast": 0.16537072910725073,
+      "mean_sharpness": 0.02953516237058684,
+      "mean_top_prob": 0.611697443486928,
+      "mean_entropy": 1.0395906253598863,
+      "signals": {
+        "input_stats": {
+          "mean_score": 20.017170591259056,
+          "std_score": 0.8082202556748754,
+          "detection_rate": 1.0
+        },
+        "embedding_cosine": {
+          "mean_score": 0.26782274052461635,
+          "std_score": 0.018707065082884052,
+          "detection_rate": 1.0
+        },
+        "embedding_mmd": {
+          "mean_score": 0.0953905216392274,
+          "std_score": 0.008061960066476158,
+          "detection_rate": 1.0
+        },
+        "confidence_top_prob": {
+          "mean_score": 1.7705921053241036,
+          "std_score": 0.9118454890804268,
+          "detection_rate": 0.34
+        },
+        "confidence_entropy": {
+          "mean_score": 1.595067644031625,
+          "std_score": 0.8156668228292947,
+          "detection_rate": 0.24
+        }
+      },
+      "mmd_pvalue_rule_detection_rate": 1.0,
+      "accuracy_drop": -0.01880000000000001
+    },
+    {
+      "corruption": "gaussian_blur",
+      "severity": 1,
+      "parameter": 0.4,
+      "accuracy": 0.1504,
+      "batch_accuracy_mean": 0.1487,
+      "batch_accuracy_std": 0.03465991921513955,
+      "mean_brightness": 0.4853626875919117,
+      "mean_contrast": 0.193067926064426,
+      "mean_sharpness": 0.02833260953586696,
+      "mean_top_prob": 0.6561264389773919,
+      "mean_entropy": 0.95532606514328,
+      "signals": {
+        "input_stats": {
+          "mean_score": 4.759634353955623,
+          "std_score": 1.0265832335641034,
+          "detection_rate": 1.0
+        },
+        "embedding_cosine": {
+          "mean_score": 0.010171820640765225,
+          "std_score": 0.003014036773110653,
+          "detection_rate": 0.0
+        },
+        "embedding_mmd": {
+          "mean_score": 0.00011921917329059895,
+          "std_score": 0.0009573555292173984,
+          "detection_rate": 0.01
+        },
+        "confidence_top_prob": {
+          "mean_score": 0.8232552349689725,
+          "std_score": 0.6288639401353792,
+          "detection_rate": 0.03
+        },
+        "confidence_entropy": {
+          "mean_score": 0.8301899607339744,
+          "std_score": 0.5511234636797763,
+          "detection_rate": 0.02
+        }
+      },
+      "mmd_pvalue_rule_detection_rate": 0.01,
+      "accuracy_drop": -0.00040000000000001146
+    },
+    {
+      "corruption": "gaussian_blur",
+      "severity": 2,
+      "parameter": 0.6,
+      "accuracy": 0.1456,
+      "batch_accuracy_mean": 0.1431,
+      "batch_accuracy_std": 0.03214638393350021,
+      "mean_brightness": 0.485365459776348,
+      "mean_contrast": 0.18403896106839385,
+      "mean_sharpness": 0.011278290779158012,
+      "mean_top_prob": 0.6538050440948086,
+      "mean_entropy": 0.9624793875108281,
+      "signals": {
+        "input_stats": {
+          "mean_score": 20.4017978338306,
+          "std_score": 1.0068898398975166,
+          "detection_rate": 1.0
+        },
+        "embedding_cosine": {
+          "mean_score": 0.016486235178919877,
+          "std_score": 0.004659889606878448,
+          "detection_rate": 0.27
+        },
+        "embedding_mmd": {
+          "mean_score": 0.004271754725580206,
+          "std_score": 0.0017090986204337673,
+          "detection_rate": 0.79
+        },
+        "confidence_top_prob": {
+          "mean_score": 0.8201159980387059,
+          "std_score": 0.6205177773862558,
+          "detection_rate": 0.04
+        },
+        "confidence_entropy": {
+          "mean_score": 0.7941750127785819,
+          "std_score": 0.5870789358063131,
+          "detection_rate": 0.03
+        }
+      },
+      "mmd_pvalue_rule_detection_rate": 0.87,
+      "accuracy_drop": 0.004399999999999987
+    },
+    {
+      "corruption": "gaussian_blur",
+      "severity": 3,
+      "parameter": 0.7,
+      "accuracy": 0.1468,
+      "batch_accuracy_mean": 0.14279999999999998,
+      "batch_accuracy_std": 0.033078089424874585,
+      "mean_brightness": 0.485371073716299,
+      "mean_contrast": 0.18070569086297297,
+      "mean_sharpness": 0.007683596949675116,
+      "mean_top_prob": 0.6528807363983534,
+      "mean_entropy": 0.9652616640109796,
+      "signals": {
+        "input_stats": {
+          "mean_score": 26.958815095039764,
+          "std_score": 1.0068912238604044,
+          "detection_rate": 1.0
+        },
+        "embedding_cosine": {
+          "mean_score": 0.022195985299498334,
+          "std_score": 0.005620243794908682,
+          "detection_rate": 0.65
+        },
+        "embedding_mmd": {
+          "mean_score": 0.007174796327722348,
+          "std_score": 0.0020791980499449613,
+          "detection_rate": 0.99
+        },
+        "confidence_top_prob": {
+          "mean_score": 0.8170118321343842,
+          "std_score": 0.6233388791453071,
+          "detection_rate": 0.03
+        },
+        "confidence_entropy": {
+          "mean_score": 0.7895007675444248,
+          "std_score": 0.6028949475787814,
+          "detection_rate": 0.03
+        }
+      },
+      "mmd_pvalue_rule_detection_rate": 1.0,
+      "accuracy_drop": 0.0031999999999999806
+    },
+    {
+      "corruption": "gaussian_blur",
+      "severity": 4,
+      "parameter": 0.8,
+      "accuracy": 0.1448,
+      "batch_accuracy_mean": 0.14229999999999998,
+      "batch_accuracy_std": 0.033222131177875994,
+      "mean_brightness": 0.48538375078278184,
+      "mean_contrast": 0.17770139195566362,
+      "mean_sharpness": 0.005503691190104975,
+      "mean_top_prob": 0.6519909086699094,
+      "mean_entropy": 0.9677539057333059,
+      "signals": {
+        "input_stats": {
+          "mean_score": 32.680741782487665,
+          "std_score": 1.0100252425930398,
+          "detection_rate": 1.0
+        },
+        "embedding_cosine": {
+          "mean_score": 0.029051774586751317,
+          "std_score": 0.006562258362739914,
+          "detection_rate": 0.95
+        },
+        "embedding_mmd": {
+          "mean_score": 0.010377246338727348,
+          "std_score": 0.002436487657611903,
+          "detection_rate": 1.0
+        },
+        "confidence_top_prob": {
+          "mean_score": 0.8249521108806337,
+          "std_score": 0.618787090927817,
+          "detection_rate": 0.03
+        },
+        "confidence_entropy": {
+          "mean_score": 0.7883834231001997,
+          "std_score": 0.6163405077786835,
+          "detection_rate": 0.03
+        }
+      },
+      "mmd_pvalue_rule_detection_rate": 1.0,
+      "accuracy_drop": 0.005199999999999982
+    },
+    {
+      "corruption": "gaussian_blur",
+      "severity": 5,
+      "parameter": 1.0,
+      "accuracy": 0.1424,
+      "batch_accuracy_mean": 0.13950000000000004,
+      "batch_accuracy_std": 0.03398161267509239,
+      "mean_brightness": 0.4854183767953431,
+      "mean_contrast": 0.17206069261424606,
+      "mean_sharpness": 0.0030334694352143025,
+      "mean_top_prob": 0.6523153645972449,
+      "mean_entropy": 0.9691002368310657,
+      "signals": {
+        "input_stats": {
+          "mean_score": 42.93048201962363,
+          "std_score": 1.023673127941033,
+          "detection_rate": 1.0
+        },
+        "embedding_cosine": {
+          "mean_score": 0.046124254949058134,
+          "std_score": 0.008407399520716681,
+          "detection_rate": 1.0
+        },
+        "embedding_mmd": {
+          "mean_score": 0.017872841883883068,
+          "std_score": 0.0031503597814047444,
+          "detection_rate": 1.0
+        },
+        "confidence_top_prob": {
+          "mean_score": 0.8521151670591144,
+          "std_score": 0.6257919609991178,
+          "detection_rate": 0.04
+        },
+        "confidence_entropy": {
+          "mean_score": 0.7878354237733299,
+          "std_score": 0.624307342146732,
+          "detection_rate": 0.03
+        }
+      },
+      "mmd_pvalue_rule_detection_rate": 1.0,
+      "accuracy_drop": 0.007599999999999996
+    },
+    {
+      "corruption": "gaussian_noise",
+      "severity": 1,
+      "parameter": 0.04,
+      "accuracy": 0.1572,
+      "batch_accuracy_mean": 0.1564,
+      "batch_accuracy_std": 0.03451144737619678,
+      "mean_brightness": 0.4851808714996936,
+      "mean_contrast": 0.19758077065526095,
+      "mean_sharpness": 0.05073986713948515,
+      "mean_top_prob": 0.6353139325237643,
+      "mean_entropy": 1.001695819729416,
+      "signals": {
+        "input_stats": {
+          "mean_score": 6.849581385009162,
+          "std_score": 0.678041463720782,
+          "detection_rate": 1.0
+        },
+        "embedding_cosine": {
+          "mean_score": 0.06688257012643621,
+          "std_score": 0.008280347291790462,
+          "detection_rate": 1.0
+        },
+        "embedding_mmd": {
+          "mean_score": 0.017932546278309508,
+          "std_score": 0.002621711477394435,
+          "detection_rate": 1.0
+        },
+        "confidence_top_prob": {
+          "mean_score": 0.9675634826651442,
+          "std_score": 0.7319387121469874,
+          "detection_rate": 0.08
+        },
+        "confidence_entropy": {
+          "mean_score": 0.982328177702619,
+          "std_score": 0.8151846035620891,
+          "detection_rate": 0.12
+        }
+      },
+      "mmd_pvalue_rule_detection_rate": 1.0,
+      "accuracy_drop": -0.007200000000000012
+    },
+    {
+      "corruption": "gaussian_noise",
+      "severity": 2,
+      "parameter": 0.06,
+      "accuracy": 0.152,
+      "batch_accuracy_mean": 0.1532,
+      "batch_accuracy_std": 0.038649191453379715,
+      "mean_brightness": 0.485073557221201,
+      "mean_contrast": 0.19921878727228648,
+      "mean_sharpness": 0.06757704624664504,
+      "mean_top_prob": 0.6337223203649424,
+      "mean_entropy": 0.9981187375715715,
+      "signals": {
+        "input_stats": {
+          "mean_score": 12.458289153853345,
+          "std_score": 0.4742133331589357,
+          "detection_rate": 1.0
+        },
+        "embedding_cosine": {
+          "mean_score": 0.1579004266104578,
+          "std_score": 0.01086668126468527,
+          "detection_rate": 1.0
+        },
+        "embedding_mmd": {
+          "mean_score": 0.05047990551689849,
+          "std_score": 0.0039054538859704135,
+          "detection_rate": 1.0
+        },
+        "confidence_top_prob": {
+          "mean_score": 1.1421184623441725,
+          "std_score": 0.7772566581807108,
+          "detection_rate": 0.09
+        },
+        "confidence_entropy": {
+          "mean_score": 1.0905276350548097,
+          "std_score": 0.7801518084846276,
+          "detection_rate": 0.11
+        }
+      },
+      "mmd_pvalue_rule_detection_rate": 1.0,
+      "accuracy_drop": -0.0020000000000000018
+    },
+    {
+      "corruption": "gaussian_noise",
+      "severity": 3,
+      "parameter": 0.08,
+      "accuracy": 0.1448,
+      "batch_accuracy_mean": 0.1505,
+      "batch_accuracy_std": 0.03774586070021454,
+      "mean_brightness": 0.4850006790533088,
+      "mean_contrast": 0.20142833835093701,
+      "mean_sharpness": 0.09060914020356858,
+      "mean_top_prob": 0.6473489748834291,
+      "mean_entropy": 0.9627669820292798,
+      "signals": {
+        "input_stats": {
+          "mean_score": 17.85473012951448,
+          "std_score": 0.3496524282338159,
+          "detection_rate": 1.0
+        },
+        "embedding_cosine": {
+          "mean_score": 0.25600751535165095,
+          "std_score": 0.012117312231129126,
+          "detection_rate": 1.0
+        },
+        "embedding_mmd": {
+          "mean_score": 0.08996497930692504,
+          "std_score": 0.00493780662587879,
+          "detection_rate": 1.0
+        },
+        "confidence_top_prob": {
+          "mean_score": 0.8432134593443896,
+          "std_score": 0.6550445627092049,
+          "detection_rate": 0.03
+        },
+        "confidence_entropy": {
+          "mean_score": 0.8676382256591262,
+          "std_score": 0.6593884005125351,
+          "detection_rate": 0.02
+        }
+      },
+      "mmd_pvalue_rule_detection_rate": 1.0,
+      "accuracy_drop": 0.005199999999999982
+    },
+    {
+      "corruption": "gaussian_noise",
+      "severity": 4,
+      "parameter": 0.09,
+      "accuracy": 0.1476,
+      "batch_accuracy_mean": 0.149,
+      "batch_accuracy_std": 0.035902646142032486,
+      "mean_brightness": 0.4850517671430759,
+      "mean_contrast": 0.20263611639301699,
+      "mean_sharpness": 0.10428539139692787,
+      "mean_top_prob": 0.6552665177953613,
+      "mean_entropy": 0.9399997524903714,
+      "signals": {
+        "input_stats": {
+          "mean_score": 20.368466585690832,
+          "std_score": 0.29089632368397506,
+          "detection_rate": 1.0
+        },
+        "embedding_cosine": {
+          "mean_score": 0.30318572556692513,
+          "std_score": 0.012819686167933338,
+          "detection_rate": 1.0
+        },
+        "embedding_mmd": {
+          "mean_score": 0.1110468078137856,
+          "std_score": 0.006084871917399368,
+          "detection_rate": 1.0
+        },
+        "confidence_top_prob": {
+          "mean_score": 0.8639450866766469,
+          "std_score": 0.6078075853540533,
+          "detection_rate": 0.03
+        },
+        "confidence_entropy": {
+          "mean_score": 0.9727113906425738,
+          "std_score": 0.7024986295047133,
+          "detection_rate": 0.04
+        }
+      },
+      "mmd_pvalue_rule_detection_rate": 1.0,
+      "accuracy_drop": 0.0023999999999999855
+    },
+    {
+      "corruption": "gaussian_noise",
+      "severity": 5,
+      "parameter": 0.1,
+      "accuracy": 0.1524,
+      "batch_accuracy_mean": 0.15510000000000002,
+      "batch_accuracy_std": 0.03782842846326027,
+      "mean_brightness": 0.4849811630836397,
+      "mean_contrast": 0.20398868941478568,
+      "mean_sharpness": 0.11913513557358257,
+      "mean_top_prob": 0.66129891537267,
+      "mean_entropy": 0.9286605951667712,
+      "signals": {
+        "input_stats": {
+          "mean_score": 22.74260531976236,
+          "std_score": 0.269568533742406,
+          "detection_rate": 1.0
+        },
+        "embedding_cosine": {
+          "mean_score": 0.35014182077167705,
+          "std_score": 0.01304654905940888,
+          "detection_rate": 1.0
+        },
+        "embedding_mmd": {
+          "mean_score": 0.13220083557079734,
+          "std_score": 0.005885945416164193,
+          "detection_rate": 1.0
+        },
+        "confidence_top_prob": {
+          "mean_score": 0.9693805338867368,
+          "std_score": 0.7294225666593146,
+          "detection_rate": 0.07
+        },
+        "confidence_entropy": {
+          "mean_score": 1.1375051682960986,
+          "std_score": 0.7967612257330183,
+          "detection_rate": 0.09
+        }
+      },
+      "mmd_pvalue_rule_detection_rate": 1.0,
+      "accuracy_drop": -0.0024000000000000132
+    },
+    {
+      "corruption": "jpeg_compression",
+      "severity": 1,
+      "parameter": 80,
+      "accuracy": 0.1404,
+      "batch_accuracy_mean": 0.1369,
+      "batch_accuracy_std": 0.03297559703780964,
+      "mean_brightness": 0.48528765381280625,
+      "mean_contrast": 0.19630606303489306,
+      "mean_sharpness": 0.037554819009529374,
+      "mean_top_prob": 0.6628597851355111,
+      "mean_entropy": 0.9423691283551391,
+      "signals": {
+        "input_stats": {
+          "mean_score": 1.3963471274077346,
+          "std_score": 0.5932463662445372,
+          "detection_rate": 0.07
+        },
+        "embedding_cosine": {
+          "mean_score": 0.01747333014597319,
+          "std_score": 0.0038352614974109384,
+          "detection_rate": 0.36
+        },
+        "embedding_mmd": {
+          "mean_score": 0.003442028653175131,
+          "std_score": 0.0016380445950258582,
+          "detection_rate": 0.67
+        },
+        "confidence_top_prob": {
+          "mean_score": 0.9129163097484418,
+          "std_score": 0.6054684002463636,
+          "detection_rate": 0.03
+        },
+        "confidence_entropy": {
+          "mean_score": 0.8784545563510757,
+          "std_score": 0.6234162493076496,
+          "detection_rate": 0.03
+        }
+      },
+      "mmd_pvalue_rule_detection_rate": 0.71,
+      "accuracy_drop": 0.009599999999999997
+    },
+    {
+      "corruption": "jpeg_compression",
+      "severity": 2,
+      "parameter": 65,
+      "accuracy": 0.136,
+      "batch_accuracy_mean": 0.13410000000000002,
+      "batch_accuracy_std": 0.03143548949833611,
+      "mean_brightness": 0.4852763471047794,
+      "mean_contrast": 0.19593910921643964,
+      "mean_sharpness": 0.03506315975749974,
+      "mean_top_prob": 0.659199848089413,
+      "mean_entropy": 0.9490035212681353,
+      "signals": {
+        "input_stats": {
+          "mean_score": 1.8506523349752972,
+          "std_score": 0.8333797294795549,
+          "detection_rate": 0.26
+        },
+        "embedding_cosine": {
+          "mean_score": 0.02090186972473179,
+          "std_score": 0.004039917116984311,
+          "detection_rate": 0.63
+        },
+        "embedding_mmd": {
+          "mean_score": 0.00509857703887078,
+          "std_score": 0.001801328675938529,
+          "detection_rate": 0.94
+        },
+        "confidence_top_prob": {
+          "mean_score": 0.851431489952986,
+          "std_score": 0.615224013190225,
+          "detection_rate": 0.04
+        },
+        "confidence_entropy": {
+          "mean_score": 0.7992639384727931,
+          "std_score": 0.5898881796960307,
+          "detection_rate": 0.02
+        }
+      },
+      "mmd_pvalue_rule_detection_rate": 0.95,
+      "accuracy_drop": 0.013999999999999985
+    },
+    {
+      "corruption": "jpeg_compression",
+      "severity": 3,
+      "parameter": 58,
+      "accuracy": 0.14,
+      "batch_accuracy_mean": 0.13620000000000002,
+      "batch_accuracy_std": 0.032489382881181354,
+      "mean_brightness": 0.48526051839613976,
+      "mean_contrast": 0.19575815429278776,
+      "mean_sharpness": 0.03393512103343352,
+      "mean_top_prob": 0.6567932101491503,
+      "mean_entropy": 0.9530642589307343,
+      "signals": {
+        "input_stats": {
+          "mean_score": 2.262381794741348,
+          "std_score": 0.9401229488151944,
+          "detection_rate": 0.41
+        },
+        "embedding_cosine": {
+          "mean_score": 0.022631066700358096,
+          "std_score": 0.004208293716450063,
+          "detection_rate": 0.74
+        },
+        "embedding_mmd": {
+          "mean_score": 0.005908102274829587,
+          "std_score": 0.0019057342446613702,
+          "detection_rate": 0.97
+        },
+        "confidence_top_prob": {
+          "mean_score": 0.777862354443143,
+          "std_score": 0.5038305756552355,
+          "detection_rate": 0.01
+        },
+        "confidence_entropy": {
+          "mean_score": 0.7054665098429544,
+          "std_score": 0.5126441548545647,
+          "detection_rate": 0.01
+        }
+      },
+      "mmd_pvalue_rule_detection_rate": 0.99,
+      "accuracy_drop": 0.009999999999999981
+    },
+    {
+      "corruption": "jpeg_compression",
+      "severity": 4,
+      "parameter": 50,
+      "accuracy": 0.14,
+      "batch_accuracy_mean": 0.1336,
+      "batch_accuracy_std": 0.03031567251439427,
+      "mean_brightness": 0.4852599327282475,
+      "mean_contrast": 0.19554007493374626,
+      "mean_sharpness": 0.032830029393585314,
+      "mean_top_prob": 0.6548699299998134,
+      "mean_entropy": 0.9570175120746907,
+      "signals": {
+        "input_stats": {
+          "mean_score": 2.7722253966109975,
+          "std_score": 1.0229779931333145,
+          "detection_rate": 0.63
+        },
+        "embedding_cosine": {
+          "mean_score": 0.024716217853608717,
+          "std_score": 0.004153073515756528,
+          "detection_rate": 0.91
+        },
+        "embedding_mmd": {
+          "mean_score": 0.0068212197171952415,
+          "std_score": 0.0019340661956970804,
+          "detection_rate": 1.0
+        },
+        "confidence_top_prob": {
+          "mean_score": 0.7224207194352704,
+          "std_score": 0.5503446400401927,
+          "detection_rate": 0.01
+        },
+        "confidence_entropy": {
+          "mean_score": 0.7208230743065509,
+          "std_score": 0.5273809998658867,
+          "detection_rate": 0.01
+        }
+      },
+      "mmd_pvalue_rule_detection_rate": 1.0,
+      "accuracy_drop": 0.009999999999999981
+    },
+    {
+      "corruption": "jpeg_compression",
+      "severity": 5,
+      "parameter": 40,
+      "accuracy": 0.1388,
+      "batch_accuracy_mean": 0.13680000000000003,
+      "batch_accuracy_std": 0.034084600628436296,
+      "mean_brightness": 0.4852304136458333,
+      "mean_contrast": 0.19524910999708384,
+      "mean_sharpness": 0.03127519781907711,
+      "mean_top_prob": 0.6520327674330743,
+      "mean_entropy": 0.967852057543215,
+      "signals": {
+        "input_stats": {
+          "mean_score": 3.612638576518377,
+          "std_score": 1.0773288195459596,
+          "detection_rate": 0.85
+        },
+        "embedding_cosine": {
+          "mean_score": 0.02713784179518517,
+          "std_score": 0.004107285880453366,
+          "detection_rate": 0.98
+        },
+        "embedding_mmd": {
+          "mean_score": 0.007783740046701979,
+          "std_score": 0.0020117420936136936,
+          "detection_rate": 1.0
+        },
+        "confidence_top_prob": {
+          "mean_score": 0.66168987179648,
+          "std_score": 0.4895035923940285,
+          "detection_rate": 0.01
+        },
+        "confidence_entropy": {
+          "mean_score": 0.7018500628175507,
+          "std_score": 0.4957429031840209,
+          "detection_rate": 0.01
+        }
+      },
+      "mmd_pvalue_rule_detection_rate": 1.0,
+      "accuracy_drop": 0.011199999999999988
+    }
+  ],
+  "correlation_with_accuracy_drop": {
+    "input_stats": {
+      "spearman_condition_level_all": -0.2358674961859154,
+      "spearman_condition_level_per_corruption": {
+        "brightness_reduction": -0.942857142857143,
+        "gaussian_blur": 0.8857142857142858,
+        "gaussian_noise": 0.14285714285714288,
+        "jpeg_compression": 0.6377481392176932
+      },
+      "spearman_batch_level_all": -0.0690471987060978,
+      "n_conditions": 21,
+      "n_batches": 2100
+    },
+    "embedding_cosine": {
+      "spearman_condition_level_all": -0.3807668120246458,
+      "spearman_condition_level_per_corruption": {
+        "brightness_reduction": -0.942857142857143,
+        "gaussian_blur": 0.942857142857143,
+        "gaussian_noise": 0.14285714285714288,
+        "jpeg_compression": 0.6377481392176932
+      },
+      "spearman_batch_level_all": -0.14003454151578643,
+      "n_conditions": 21,
+      "n_batches": 2100
+    },
+    "embedding_mmd": {
+      "spearman_condition_level_all": -0.3814165847414114,
+      "spearman_condition_level_per_corruption": {
+        "brightness_reduction": -0.942857142857143,
+        "gaussian_blur": 0.8857142857142858,
+        "gaussian_noise": 0.14285714285714288,
+        "jpeg_compression": 0.6377481392176932
+      },
+      "spearman_batch_level_all": -0.12526812005445437,
+      "n_conditions": 21,
+      "n_batches": 2100
+    },
+    "confidence_top_prob": {
+      "spearman_condition_level_all": -0.06887590797715436,
+      "spearman_condition_level_per_corruption": {
+        "brightness_reduction": -0.028571428571428574,
+        "gaussian_blur": 0.6571428571428573,
+        "gaussian_noise": -0.6,
+        "jpeg_compression": -0.28988551782622424
+      },
+      "spearman_batch_level_all": -0.00267048710747208,
+      "n_conditions": 21,
+      "n_batches": 2100
+    },
+    "confidence_entropy": {
+      "spearman_condition_level_all": -0.11241068000045004,
+      "spearman_condition_level_per_corruption": {
+        "brightness_reduction": 0.14285714285714288,
+        "gaussian_blur": -0.942857142857143,
+        "gaussian_noise": -0.6571428571428573,
+        "jpeg_compression": -0.5797710356524485
+      },
+      "spearman_batch_level_all": 0.0071701092829268565,
+      "n_conditions": 21,
+      "n_batches": 2100
+    }
+  },
+  "runtime_seconds": 470.3442668914795
+}
